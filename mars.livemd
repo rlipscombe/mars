@@ -324,7 +324,7 @@ defmodule RobotTest do
 
   test "Robots should not move off the world if they're on scent" do
     grid = Grid.new(1, 1) |> Grid.mark(1, 1)
-    robot = Robot.new(1, 1, :north, [:north])
+    robot = Robot.new(1, 1, :north, [:forward])
     robot = Runner.run(robot, grid)
     assert robot.x == 1
     assert robot.y == 1
