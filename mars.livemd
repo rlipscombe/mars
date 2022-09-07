@@ -95,7 +95,7 @@ end
 
 ```elixir
 # Convert the range.
-range =
+grid =
   String.split(range)
   |> Enum.map(&String.to_integer/1)
   |> Grid.new()
@@ -152,17 +152,22 @@ robots =
 
 ```elixir
 defmodule Runner do
-  def run(robot = %Robot{instructions: instructions}) do
-    Enum.reduce(instructions, robot, &next/2)
+  def run(robot = %Robot{instructions: instructions}, grid) do
+    Enum.reduce(instructions, robot, fn instruction, robot -> next(instruction, robot, grid) end)
   end
 
-  def next(:right, robot = %Robot{facing: facing}), do: %{robot | facing: right(facing)}
-  def next(:left, robot = %Robot{facing: facing}), do: %{robot | facing: left(facing)}
+  def next(:right, robot = %Robot{facing: facing}, _grid), do: %{robot | facing: right(facing)}
+  def next(:left, robot = %Robot{facing: facing}, _grid), do: %{robot | facing: left(facing)}
 
-  def next(:forward, robot = %Robot{facing: :north, y: y}), do: %{robot | y: y + 1}
-  def next(:forward, robot = %Robot{facing: :east, x: x}), do: %{robot | x: x + 1}
-  def next(:forward, robot = %Robot{facing: :south, y: y}), do: %{robot | y: y - 1}
-  def next(:forward, robot = %Robot{facing: :west, x: x}), do: %{robot | x: x - 1}
+  def next(:forward, robot = %Robot{facing: :north, y: y}, %Grid{max_y: max_y})
+      when y >= max_y,
+      do: %{robot | lost: true}
+
+  def next(:forward, robot = %Robot{facing: :north, y: y}, _grid), do: %{robot | y: y + 1}
+
+  def next(:forward, robot = %Robot{facing: :east, x: x}, _grid), do: %{robot | x: x + 1}
+  def next(:forward, robot = %Robot{facing: :south, y: y}, _grid), do: %{robot | y: y - 1}
+  def next(:forward, robot = %Robot{facing: :west, x: x}, _grid), do: %{robot | x: x - 1}
 
   defp left(:north), do: :west
   defp left(:east), do: :north
@@ -191,7 +196,7 @@ format_robot = fn robot -> "#{robot.x} #{robot.y} #{format_direction.(robot.faci
 
 ```elixir
 for robot <- robots do
-  robot = Runner.run(robot)
+  robot = Runner.run(robot, grid)
   IO.puts(format_robot.(robot))
   robot
 end
