@@ -117,3 +117,27 @@ robots =
     {{x, y, facing}, instructions}
   end)
 ```
+
+```elixir
+for robot = {_, instructions} <- robots do
+  robot =
+    Enum.reduce(instructions, robot, fn instruction, {{x, y, facing}, _} ->
+      case {instruction, facing} do
+        {:left, :north} -> {{x, y, :west}, instructions}
+        {:left, :east} -> {{x, y, :north}, instructions}
+        {:left, :south} -> {{x, y, :east}, instructions}
+        {:left, :west} -> {{x, y, :south}, instructions}
+        {:right, :north} -> {{x, y, :east}, instructions}
+        {:right, :east} -> {{x, y, :south}, instructions}
+        {:right, :south} -> {{x, y, :west}, instructions}
+        {:right, :west} -> {{x, y, :north}, instructions}
+        {:forward, :north} -> {{x, y + 1, facing}, instructions}
+        {:forward, :east} -> {{x + 1, y, facing}, instructions}
+        {:forward, :south} -> {{x, y - 1, facing}, instructions}
+        {:forward, :west} -> {{x - 1, y, facing}, instructions}
+      end
+    end)
+
+  IO.puts("#{inspect(robot)}")
+end
+```
