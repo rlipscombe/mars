@@ -26,24 +26,45 @@ enum Direction {
   west,
 }
 
-class Robot {
+class Position {
   int x;
   int y;
-  Direction direction;
-  List<Instruction> instructions = [];
 
-  Robot(this.x, this.y, this.direction);
+  Position(this.x, this.y);
 
   @override
   String toString() {
-    return "Robot: $x, $y, $direction, $instructions";
+    return "Position: $x, $y";
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! Position) return false;
+    return x == other.x && y == other.y;
+  }
+
+  @override
+  int get hashCode => (37 * x) + y;
+}
+
+class Robot {
+  Position position;
+  Direction direction;
+  List<Instruction> instructions = [];
+
+  Robot(int x, int y, this.direction) : position = Position(x, y);
+
+  get summary => "${position.x} ${position.y} ${_direction(direction)}";
+
+  @override
+  String toString() {
+    return "Robot: $position, $direction, $instructions";
   }
 
   @override
   bool operator ==(Object other) {
     if (other is! Robot) return false;
-    return x == other.x &&
-        y == other.y &&
+    return position == other.position &&
         direction == other.direction &&
         instructions.equals(other.instructions);
   }
@@ -51,8 +72,7 @@ class Robot {
   @override
   int get hashCode {
     var result = 17;
-    result = 37 * result + x;
-    result = 37 * result + y;
+    result = 37 * result + position.hashCode;
     result = 37 * result + direction.hashCode;
     result = 37 * result + instructions.hashCode;
     return result;
