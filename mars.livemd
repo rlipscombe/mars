@@ -107,14 +107,14 @@ A `Robot` consists of coordinates, a direction, and a list of instructions:
 
 ```elixir
 defmodule Robot do
-  defstruct [:x, :y, :facing, :instructions]
+  defstruct [:x, :y, :facing, :lost, :instructions]
 
   def new(x, y, facing, instructions)
       when is_integer(x) and
              is_integer(y) and
              is_atom(facing) and
              is_list(instructions) do
-    %__MODULE__{x: x, y: y, facing: facing, instructions: instructions}
+    %__MODULE__{x: x, y: y, facing: facing, lost: false, instructions: instructions}
   end
 end
 ```
@@ -189,7 +189,16 @@ format_direction = fn
   :west -> "W"
 end
 
-format_robot = fn robot -> "#{robot.x} #{robot.y} #{format_direction.(robot.facing)}" end
+format_lost = fn
+  true -> "LOST"
+  _ -> ""
+end
+
+format_robot = fn robot ->
+  "#{robot.x} #{robot.y} #{format_direction.(robot.facing)} #{format_lost.(robot.lost)}"
+end
+```
+
 ```
 
 ## Run the instructions
