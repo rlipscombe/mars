@@ -88,9 +88,12 @@ We'll use a module, `Grid`, to give us some more type-safety.
 
 ```elixir
 defmodule Grid do
-  defstruct [:max_x, :max_y]
+  defstruct [:max_x, :max_y, :marks]
+
   def new([max_x, max_y]), do: new(max_x, max_y)
-  def new(max_x, max_y), do: %__MODULE__{max_x: max_x, max_y: max_y}
+  def new(max_x, max_y), do: %__MODULE__{max_x: max_x, max_y: max_y, marks: []}
+
+  def mark(grid = %__MODULE__{marks: marks}, x, y), do: %{grid | marks: [{x, y} | marks]}
 end
 ```
 
