@@ -121,19 +121,19 @@ class Robot {
 
   Direction turnLeft(Direction d) {
     return {
-      Direction.north: Direction.east,
-      Direction.east: Direction.south,
-      Direction.south: Direction.west,
-      Direction.west: Direction.north,
+      Direction.north: Direction.west,
+      Direction.east: Direction.north,
+      Direction.south: Direction.east,
+      Direction.west: Direction.south,
     }[d]!;
   }
 
   Direction turnRight(Direction d) {
     return {
-      Direction.north: Direction.west,
-      Direction.east: Direction.north,
-      Direction.south: Direction.east,
-      Direction.west: Direction.south,
+      Direction.north: Direction.east,
+      Direction.east: Direction.south,
+      Direction.south: Direction.west,
+      Direction.west: Direction.north,
     }[d]!;
   }
 
