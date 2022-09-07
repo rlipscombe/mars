@@ -17,6 +17,10 @@ class Grid {
 
   @override
   int get hashCode => (37 * maxX) + maxY;
+
+  bool contains(Position position) {
+    return position.x <= maxX && position.y <= maxY;
+  }
 }
 
 enum Direction {
@@ -51,10 +55,12 @@ class Robot {
   Position position;
   Direction direction;
   List<Instruction> instructions = [];
+  bool isLost = false;
 
   Robot(int x, int y, this.direction) : position = Position(x, y);
 
-  get summary => "${position.x} ${position.y} ${_direction(direction)}";
+  get summary =>
+      "${position.x} ${position.y} ${_formatDirection(direction)} ${_formatLost(isLost)}";
 
   @override
   String toString() {
@@ -88,7 +94,14 @@ class Robot {
           direction = turnRight(direction);
           break;
         case Instruction.forward:
-          position = moveForward(direction, position);
+          var nextPosition = moveForward(direction, position);
+          if (grid.contains(nextPosition)) {
+            position = nextPosition;
+          } else {
+            isLost = true;
+            return;
+          }
+
           break;
       }
     }
@@ -126,13 +139,17 @@ class Robot {
   }
 }
 
-String _direction(Direction d) {
+String _formatDirection(Direction d) {
   return {
     Direction.north: "N",
     Direction.east: "E",
     Direction.south: "S",
     Direction.west: "W"
   }[d]!;
+}
+
+String _formatLost(bool isLost) {
+  return isLost ? "LOST" : "";
 }
 
 enum Instruction {
