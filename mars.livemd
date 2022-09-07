@@ -89,7 +89,8 @@ We'll use a module, `Grid`, to give us some more type-safety.
 ```elixir
 defmodule Grid do
   defstruct [:max_x, :max_y]
-  def new([max_x, max_y]), do: %__MODULE__{max_x: max_x, max_y: max_y}
+  def new([max_x, max_y]), do: new(max_x, max_y)
+  def new(max_x, max_y), do: %__MODULE__{max_x: max_x, max_y: max_y}
 end
 ```
 
@@ -120,10 +121,8 @@ end
 ```
 
 ```elixir
-# Parse the robots.
-robots =
-  Enum.chunk_every(robots, 2)
-  |> Enum.map(fn [init, instructions] ->
+defmodule Parser do
+  def parse_robot([init, instructions]) do
     [x, y, facing] = String.split(init)
     x = String.to_integer(x)
     y = String.to_integer(y)
@@ -136,16 +135,26 @@ robots =
         "W" -> :west
       end
 
-    instructions =
-      String.to_charlist(instructions)
-      |> Enum.map(fn
-        ?R -> :right
-        ?L -> :left
-        ?F -> :forward
-      end)
-
+    instructions = Parser.parse_instructions(instructions)
     Robot.new(x, y, facing, instructions)
-  end)
+  end
+
+  def parse_instructions(instructions) do
+    String.to_charlist(instructions)
+    |> Enum.map(fn
+      ?R -> :right
+      ?L -> :left
+      ?F -> :forward
+    end)
+  end
+end
+```
+
+```elixir
+# Parse the robots.
+robots =
+  Enum.chunk_every(robots, 2)
+  |> Enum.map(&Parser.parse_robot/1)
 ```
 
 ## Introduce a Runner
