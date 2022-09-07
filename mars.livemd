@@ -262,6 +262,51 @@ defmodule RobotTest do
     refute robot.lost
   end
 
+  describe "For whatever reason, my robot is in the wrong place, so let's drill down a bit" do
+    test "Sample Input: Robot 2, part 1" do
+      grid = Grid.new(5, 3)
+      # FRRF should put the robot back where it was, but facing the other way.
+      robot = Robot.new(3, 2, :north, Parser.parse_instructions("FRRF"))
+      robot = Runner.run(robot, grid)
+      assert robot.x == 3
+      assert robot.y == 2
+      assert robot.facing == :south
+      refute robot.lost
+    end
+
+    test "Sample Input: Robot 2, part 2" do
+      grid = Grid.new(5, 3)
+      # FRRF did put the robot back where it was, but facing the other way.
+      # LLF should put the robot at the north edge of the grid.
+      robot = Robot.new(3, 2, :south, Parser.parse_instructions("LLF"))
+      robot = Runner.run(robot, grid)
+      assert robot.x == 3
+      assert robot.y == 3
+      assert robot.facing == :north
+      refute robot.lost
+    end
+
+    test "Sample Input: Robot 2, part 3" do
+      grid = Grid.new(5, 3)
+      # ...another F should put the robot over the edge of the grid
+      robot = Robot.new(3, 3, :north, Parser.parse_instructions("F"))
+      robot = Runner.run(robot, grid)
+      assert robot.x == 3
+      assert robot.y == 3
+      assert robot.facing == :north
+      assert robot.lost
+
+      # ...and further instructions should be ignored
+      robot = Runner.next(:right, robot, grid)
+      robot = Runner.next(:right, robot, grid)
+      robot = Runner.next(:forward, robot, grid)
+      assert robot.x == 3
+      assert robot.y == 3
+      assert robot.facing == :north
+      assert robot.lost
+    end
+  end
+
   test "Sample Input: Robot 2" do
     grid = Grid.new(5, 3)
     robot = Robot.new(3, 2, :north, Parser.parse_instructions("FRRFLLFFRRFLL"))
