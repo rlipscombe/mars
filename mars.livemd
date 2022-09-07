@@ -91,9 +91,15 @@ defmodule Grid do
   defstruct [:max_x, :max_y, :marks]
 
   def new([max_x, max_y]), do: new(max_x, max_y)
-  def new(max_x, max_y), do: %__MODULE__{max_x: max_x, max_y: max_y, marks: []}
+  def new(max_x, max_y), do: %__MODULE__{max_x: max_x, max_y: max_y, marks: MapSet.new()}
 
-  def mark(grid = %__MODULE__{marks: marks}, x, y), do: %{grid | marks: [{x, y} | marks]}
+  def mark(grid = %__MODULE__{marks: marks}, x, y) do
+    %{grid | marks: MapSet.put(marks, {x, y})}
+  end
+
+  def is_marked(%__MODULE__{marks: marks}, x, y) do
+    MapSet.member?(marks, {x, y})
+  end
 end
 ```
 
@@ -193,7 +199,14 @@ defmodule Runner do
   def next(:forward, robot = %Robot{facing: :west, x: x}, grid) when x > 0,
     do: {%{robot | x: x - 1}, grid}
 
-  def next(:forward, robot = %Robot{}, grid), do: {%{robot | lost: true}, grid}
+  def next(:forward, robot = %Robot{x: x, y: y}, grid) do
+    if Grid.is_marked(grid, x, y) do
+      # Ignore the instruction to go forward.
+      {robot, grid}
+    else
+      {%{robot | lost: true}, grid}
+    end
+  end
 
   defp left(:north), do: :west
   defp left(:east), do: :north
