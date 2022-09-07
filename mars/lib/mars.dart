@@ -6,7 +6,7 @@ class Grid {
 
   @override
   String toString() {
-    return "$maxX, $maxY";
+    return "Grid: $maxX, $maxY";
   }
 
   @override
@@ -36,7 +36,7 @@ class Robot {
 
   @override
   String toString() {
-    return "$x, $y, $direction, $instructions";
+    return "Robot: $x, $y, $direction, $instructions";
   }
 
   @override

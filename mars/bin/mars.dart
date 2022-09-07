@@ -9,6 +9,6 @@ void main(List<String> arguments) async {
   var definition = RobotsDefinition();
   var parser = definition.build();
 
-  var robots = parser.parse(lines);
-  print(robots.value);
+  var results = parser.parse(lines).value;
+  print(results);
 }
