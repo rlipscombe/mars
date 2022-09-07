@@ -218,8 +218,6 @@ end
 ExUnit.configure(exclude: [:skip])
 ```
 
-Per https://github.com/livebook-dev/livebook/pull/153/files...
-
 ```elixir
 ExUnit.start(autorun: false)
 
