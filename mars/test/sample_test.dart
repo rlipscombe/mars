@@ -82,4 +82,32 @@ LF""").value;
     robot.run(grid);
     expect("${robot.summary}", "3 3 N");
   });
+
+  test('robot 3c', () {
+    var definition = RobotsDefinition();
+    var parser = definition.build(start: definition.robot);
+
+    Grid grid = Grid(5, 3);
+    grid.mark(Position(3, 3));
+
+    var robot = parser.parse("""3 3 N
+LF""").value;
+
+    robot.run(grid);
+    expect("${robot.summary}", "2 3 W");
+  });
+
+  test('robot 3d', () {
+    var definition = RobotsDefinition();
+    var parser = definition.build(start: definition.robot);
+
+    Grid grid = Grid(5, 3);
+    grid.mark(Position(3, 3));
+
+    var robot = parser.parse("""2 3 W
+L""").value;
+
+    robot.run(grid);
+    expect("${robot.summary}", "2 3 S");
+  });
 }
