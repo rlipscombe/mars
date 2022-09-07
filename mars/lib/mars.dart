@@ -110,8 +110,8 @@ class Robot {
             if (!grid.isMarked(position)) {
               grid.mark(position);
               isLost = true;
+              return;
             }
-            return;
           }
 
           break;
