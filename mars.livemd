@@ -6,6 +6,14 @@ Mix.install([
 ])
 ```
 
+## Instructions
+
+This is an Elixir Livebook. You'll need to install Livebook; see <https://livebook.dev/>. When you run Livebook, a web browser will appear. Navigate to, and open, this file.
+
+To evaluate the notebook press `Esc` (enter navigation mode), `e` (evaluate), `a` (all outdated). You'll need to do this at least once to get the input textareas to appear.
+
+For help, press `Esc`, `?`.
+
 ## The Problem
 
 The surface of Mars can be modelled by a rectangular grid around which robots are able to
