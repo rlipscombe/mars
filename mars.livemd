@@ -1,0 +1,7 @@
+# Problem: Martian Robots
+
+```elixir
+Mix.install([
+  {:kino, github: "livebook-dev/kino"}
+])
+```
