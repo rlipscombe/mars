@@ -171,12 +171,12 @@ robots =
 ```elixir
 defmodule Runner do
   def run(robot = %Robot{instructions: instructions}, grid) do
-    {robot, _grid} =
+    {robot, grid} =
       Enum.reduce(instructions, {robot, grid}, fn instruction, {robot, grid} ->
         next(instruction, robot, grid)
       end)
 
-    robot
+    {robot, grid}
   end
 
   def next(_, robot = %Robot{lost: true}, grid), do: {robot, grid}
@@ -246,13 +246,27 @@ ExUnit.start(autorun: false)
 ```
 
 ```elixir
+defmodule SimpleGridTest do
+  use ExUnit.Case
+
+  test "marking works correctly" do
+    grid = Grid.new(5, 3) |> Grid.mark(3, 3)
+    refute Grid.is_marked(grid, 1, 1)
+    assert Grid.is_marked(grid, 3, 3)
+  end
+end
+
+ExUnit.run()
+```
+
+```elixir
 defmodule SimpleRobotTest do
   use ExUnit.Case
 
   test "A robot which keeps turning right stays in the same place" do
     grid = Grid.new(1, 1)
     robot = Robot.new(0, 0, :north, [:right, :right, :right])
-    robot = Runner.run(robot, grid)
+    {robot, _} = Runner.run(robot, grid)
     assert robot.x == 0
     assert robot.y == 0
     assert robot.facing == :west
@@ -262,7 +276,7 @@ defmodule SimpleRobotTest do
   test "A robot which walks north off the map should have the correct last position" do
     grid = Grid.new(1, 1)
     robot = Robot.new(0, 0, :north, [:forward, :forward])
-    robot = Runner.run(robot, grid)
+    {robot, _} = Runner.run(robot, grid)
     assert robot.x == 0
     assert robot.y == 1
     assert robot.lost
@@ -271,7 +285,7 @@ defmodule SimpleRobotTest do
   test "A robot which walks east off the map should have the correct last position" do
     grid = Grid.new(1, 1)
     robot = Robot.new(0, 0, :east, [:forward, :forward])
-    robot = Runner.run(robot, grid)
+    {robot, _} = Runner.run(robot, grid)
     assert robot.x == 1
     assert robot.y == 0
     assert robot.lost
@@ -288,7 +302,7 @@ defmodule SampleInputTest do
   test "Sample Input: Robot 1" do
     grid = Grid.new(5, 3)
     robot = Robot.new(1, 1, :east, Parser.parse_instructions("RFRFRFRF"))
-    robot = Runner.run(robot, grid)
+    {robot, _} = Runner.run(robot, grid)
     assert robot.x == 1
     assert robot.y == 1
     assert robot.facing == :east
@@ -300,7 +314,7 @@ defmodule SampleInputTest do
       grid = Grid.new(5, 3)
       # FRRF should put the robot back where it was, but facing the other way.
       robot = Robot.new(3, 2, :north, Parser.parse_instructions("FRRF"))
-      robot = Runner.run(robot, grid)
+      {robot, _} = Runner.run(robot, grid)
       assert robot.x == 3
       assert robot.y == 2
       assert robot.facing == :south
@@ -312,7 +326,7 @@ defmodule SampleInputTest do
       # FRRF did put the robot back where it was, but facing the other way.
       # LLF should put the robot at the north edge of the grid.
       robot = Robot.new(3, 2, :south, Parser.parse_instructions("LLF"))
-      robot = Runner.run(robot, grid)
+      {robot, _} = Runner.run(robot, grid)
       assert robot.x == 3
       assert robot.y == 3
       assert robot.facing == :north
@@ -323,7 +337,7 @@ defmodule SampleInputTest do
       grid = Grid.new(5, 3)
       # ...another F should put the robot over the edge of the grid
       robot = Robot.new(3, 3, :north, Parser.parse_instructions("F"))
-      robot = Runner.run(robot, grid)
+      {robot, _} = Runner.run(robot, grid)
       assert robot.x == 3
       assert robot.y == 3
       assert robot.facing == :north
@@ -343,20 +357,19 @@ defmodule SampleInputTest do
   test "Sample Input: Robot 2" do
     grid = Grid.new(5, 3)
     robot = Robot.new(3, 2, :north, Parser.parse_instructions("FRRFLLFFRRFLL"))
-    robot = Runner.run(robot, grid)
+    {robot, grid} = Runner.run(robot, grid)
     assert robot.x == 3
     assert robot.y == 3
     assert robot.facing == :north
     assert robot.lost
 
-    # TODO, but needs tuple return from Runner.run:
-    # assert Grid.is_marked(grid, 3, 3)
+    assert Grid.is_marked(grid, 3, 3)
   end
 
   test "Sample Input: Robot 3" do
     grid = Grid.new(5, 3) |> Grid.mark(3, 3)
     robot = Robot.new(0, 3, :west, Parser.parse_instructions("LLFFF"))
-    robot = Runner.run(robot, grid)
+    {robot, _} = Runner.run(robot, grid)
     assert robot.x == 3
     assert robot.y == 3
     assert robot.facing == :east
@@ -397,7 +410,7 @@ defmodule ScentTest do
   test "Robots should not move off the world if they're on scent" do
     grid = Grid.new(1, 1) |> Grid.mark(1, 1)
     robot = Robot.new(1, 1, :north, [:forward])
-    robot = Runner.run(robot, grid)
+    {robot, _} = Runner.run(robot, grid)
     assert robot.x == 1
     assert robot.y == 1
     refute robot.lost
@@ -406,7 +419,7 @@ defmodule ScentTest do
   test "Robots can move forward on scented squares if it wouldn't kill them" do
     grid = Grid.new(1, 1) |> Grid.mark(1, 1)
     robot = Robot.new(1, 1, :west, [:forward])
-    robot = Runner.run(robot, grid)
+    {robot, _} = Runner.run(robot, grid)
     assert robot.x == 0
     assert robot.y == 1
     refute robot.lost
@@ -419,11 +432,11 @@ ExUnit.run()
 ## Run the instructions
 
 ```elixir
-for robot <- robots do
-  robot = Runner.run(robot, grid)
+Enum.reduce(robots, grid, fn robot, grid ->
+  {robot, grid} = Runner.run(robot, grid)
   IO.puts(format_robot.(robot))
-  robot
-end
+  grid
+end)
 
 :ok
 ```
