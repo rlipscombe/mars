@@ -77,6 +77,62 @@ class Robot {
     result = 37 * result + instructions.hashCode;
     return result;
   }
+
+  void run(Grid grid) {
+    for (var instruction in instructions) {
+      switch (instruction) {
+        case Instruction.left:
+          direction = turnLeft(direction);
+          break;
+        case Instruction.right:
+          direction = turnRight(direction);
+          break;
+        case Instruction.forward:
+          position = moveForward(direction, position);
+          break;
+      }
+    }
+  }
+
+  Direction turnLeft(Direction d) {
+    return {
+      Direction.north: Direction.east,
+      Direction.east: Direction.south,
+      Direction.south: Direction.west,
+      Direction.west: Direction.north,
+    }[d]!;
+  }
+
+  Direction turnRight(Direction d) {
+    return {
+      Direction.north: Direction.west,
+      Direction.east: Direction.north,
+      Direction.south: Direction.east,
+      Direction.west: Direction.south,
+    }[d]!;
+  }
+
+  Position moveForward(Direction d, Position position) {
+    switch (d) {
+      case Direction.north:
+        return Position(position.x, position.y + 1);
+      case Direction.east:
+        return Position(position.x + 1, position.y);
+      case Direction.south:
+        return Position(position.x, position.y - 1);
+      case Direction.west:
+        return Position(position.x - 1, position.y);
+    }
+  }
+}
+
+String _direction(Direction d) {
+  return {
+    Direction.north: "N",
+    Direction.east: "E",
+    Direction.south: "S",
+    Direction.west: "W"
+  }[d]!;
 }
 
 enum Instruction {
