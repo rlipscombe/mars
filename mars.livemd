@@ -168,15 +168,19 @@ defmodule Runner do
   def next(:right, robot = %Robot{facing: facing}, _grid), do: %{robot | facing: right(facing)}
   def next(:left, robot = %Robot{facing: facing}, _grid), do: %{robot | facing: left(facing)}
 
-  def next(:forward, robot = %Robot{facing: :north, y: y}, %Grid{max_y: max_y})
-      when y >= max_y,
-      do: %{robot | lost: true}
+  def next(:forward, robot = %Robot{facing: :north, y: y}, grid) when y < grid.max_y,
+    do: %{robot | y: y + 1}
 
-  def next(:forward, robot = %Robot{facing: :north, y: y}, _grid), do: %{robot | y: y + 1}
+  def next(:forward, robot = %Robot{facing: :east, x: x}, grid) when x < grid.max_x,
+    do: %{robot | x: x + 1}
 
-  def next(:forward, robot = %Robot{facing: :east, x: x}, _grid), do: %{robot | x: x + 1}
-  def next(:forward, robot = %Robot{facing: :south, y: y}, _grid), do: %{robot | y: y - 1}
-  def next(:forward, robot = %Robot{facing: :west, x: x}, _grid), do: %{robot | x: x - 1}
+  def next(:forward, robot = %Robot{facing: :south, y: y}, _grid) when y > 0,
+    do: %{robot | y: y - 1}
+
+  def next(:forward, robot = %Robot{facing: :west, x: x}, _grid) when x > 0,
+    do: %{robot | x: x - 1}
+
+  def next(:forward, robot = %Robot{}, _grid), do: %{robot | lost: true}
 
   defp left(:north), do: :west
   defp left(:east), do: :north
