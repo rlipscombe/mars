@@ -82,11 +82,41 @@ input =
 [range | robots] = input
 ```
 
+## Define the grid
+
+We'll use a module, `Grid`, to give us some more type-safety.
+
+```elixir
+defmodule Grid do
+  defstruct [:max_x, :max_y]
+  def new([max_x, max_y]), do: %__MODULE__{max_x: max_x, max_y: max_y}
+end
+```
+
 ```elixir
 # Convert the range.
 range =
   String.split(range)
   |> Enum.map(&String.to_integer/1)
+  |> Grid.new()
+```
+
+## Define the Robot module
+
+A `Robot` consists of coordinates, a direction, and a list of instructions:
+
+```elixir
+defmodule Robot do
+  defstruct [:x, :y, :facing, :instructions]
+
+  def new(x, y, facing, instructions)
+      when is_integer(x) and
+             is_integer(y) and
+             is_atom(facing) and
+             is_list(instructions) do
+    %__MODULE__{x: x, y: y, facing: facing, instructions: instructions}
+  end
+end
 ```
 
 ```elixir
@@ -114,45 +144,57 @@ robots =
         ?F -> :forward
       end)
 
-    {{x, y, facing}, instructions}
+    Robot.new(x, y, facing, instructions)
   end)
 ```
 
+## Introduce a Runner
+
 ```elixir
-[max_x, max_y] = range
+defmodule Runner do
+  def run(robot = %Robot{instructions: instructions}) do
+    Enum.reduce(instructions, robot, &next/2)
+  end
 
-for robot = {_, instructions} <- robots do
-  robot =
-    Enum.reduce(instructions, robot, fn instruction, {{x, y, facing}, _} ->
-      next =
-        case {instruction, facing} do
-          {:left, :north} -> {{x, y, :west}, instructions}
-          {:left, :east} -> {{x, y, :north}, instructions}
-          {:left, :south} -> {{x, y, :east}, instructions}
-          {:left, :west} -> {{x, y, :south}, instructions}
-          {:right, :north} -> {{x, y, :east}, instructions}
-          {:right, :east} -> {{x, y, :south}, instructions}
-          {:right, :south} -> {{x, y, :west}, instructions}
-          {:right, :west} -> {{x, y, :north}, instructions}
-          {:forward, :north} -> {{x, y + 1, facing}, instructions}
-          {:forward, :east} -> {{x + 1, y, facing}, instructions}
-          {:forward, :south} -> {{x, y - 1, facing}, instructions}
-          {:forward, :west} -> {{x - 1, y, facing}, instructions}
-        end
+  def next(:right, robot = %Robot{facing: facing}), do: %{robot | facing: right(facing)}
+  def next(:left, robot = %Robot{facing: facing}), do: %{robot | facing: left(facing)}
 
-      case next do
-        {{x, y, _}, _} when x > max_x -> {:lost, {x, y}}
-        {{x, y, _}, _} when x < 0 -> {:lost, {x, y}}
-        {{x, y, _}, _} when y > max_y -> {:lost, {x, y}}
-        {{x, y, _}, _} when y < 0 -> {:lost, {x, y}}
-        _ -> next
-      end
+  def next(:forward, robot = %Robot{facing: :north, y: y}), do: %{robot | y: y + 1}
+  def next(:forward, robot = %Robot{facing: :east, x: x}), do: %{robot | x: x + 1}
+  def next(:forward, robot = %Robot{facing: :south, y: y}), do: %{robot | y: y - 1}
+  def next(:forward, robot = %Robot{facing: :west, x: x}), do: %{robot | x: x - 1}
 
-      next
-    end)
+  defp left(:north), do: :west
+  defp left(:east), do: :north
+  defp left(:south), do: :east
+  defp left(:west), do: :south
 
-  IO.puts("#{inspect(robot)}")
+  defp right(:north), do: :east
+  defp right(:east), do: :south
+  defp right(:south), do: :west
+  defp right(:west), do: :north
+end
+```
 
+```elixir
+format_direction = fn
+  :north -> "N"
+  :east -> "E"
+  :south -> "S"
+  :west -> "W"
+end
+
+format_robot = fn robot -> "#{robot.x} #{robot.y} #{format_direction.(robot.facing)}" end
+```
+
+## Run the instructions
+
+```elixir
+for robot <- robots do
+  robot = Runner.run(robot)
+  IO.puts(format_robot.(robot))
   robot
 end
+
+:ok
 ```
