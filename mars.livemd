@@ -201,7 +201,7 @@ defmodule Runner do
       # Ignore the instruction to go forward.
       {robot, grid}
     else
-      {%{robot | lost: true}, grid}
+      {%{robot | lost: true}, Grid.mark(grid, x, y)}
     end
   end
 
