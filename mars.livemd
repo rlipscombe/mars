@@ -171,12 +171,9 @@ robots =
 ```elixir
 defmodule Runner do
   def run(robot = %Robot{instructions: instructions}, grid) do
-    {robot, grid} =
-      Enum.reduce(instructions, {robot, grid}, fn instruction, {robot, grid} ->
-        next(instruction, robot, grid)
-      end)
-
-    {robot, grid}
+    Enum.reduce(instructions, {robot, grid}, fn instruction, {robot, grid} ->
+      next(instruction, robot, grid)
+    end)
   end
 
   def next(_, robot = %Robot{lost: true}, grid), do: {robot, grid}
