@@ -165,6 +165,8 @@ defmodule Runner do
     Enum.reduce(instructions, robot, fn instruction, robot -> next(instruction, robot, grid) end)
   end
 
+  def next(_, robot = %Robot{lost: true}, _grid), do: robot
+
   def next(:right, robot = %Robot{facing: facing}, _grid), do: %{robot | facing: right(facing)}
   def next(:left, robot = %Robot{facing: facing}, _grid), do: %{robot | facing: left(facing)}
 
