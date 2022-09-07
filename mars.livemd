@@ -88,9 +88,18 @@ We'll use a module, `Grid`, to give us some more type-safety.
 
 ```elixir
 defmodule Grid do
-  defstruct [:max_x, :max_y]
+  defstruct [:max_x, :max_y, :marks]
+
   def new([max_x, max_y]), do: new(max_x, max_y)
-  def new(max_x, max_y), do: %__MODULE__{max_x: max_x, max_y: max_y}
+  def new(max_x, max_y), do: %__MODULE__{max_x: max_x, max_y: max_y, marks: MapSet.new()}
+
+  def mark(grid = %__MODULE__{marks: marks}, x, y) do
+    %{grid | marks: MapSet.put(marks, {x, y})}
+  end
+
+  def is_marked(%__MODULE__{marks: marks}, x, y) do
+    MapSet.member?(marks, {x, y})
+  end
 end
 ```
 
@@ -162,27 +171,39 @@ robots =
 ```elixir
 defmodule Runner do
   def run(robot = %Robot{instructions: instructions}, grid) do
-    Enum.reduce(instructions, robot, fn instruction, robot -> next(instruction, robot, grid) end)
+    Enum.reduce(instructions, {robot, grid}, fn instruction, {robot, grid} ->
+      next(instruction, robot, grid)
+    end)
   end
 
-  def next(_, robot = %Robot{lost: true}, _grid), do: robot
+  def next(_, robot = %Robot{lost: true}, grid), do: {robot, grid}
 
-  def next(:right, robot = %Robot{facing: facing}, _grid), do: %{robot | facing: right(facing)}
-  def next(:left, robot = %Robot{facing: facing}, _grid), do: %{robot | facing: left(facing)}
+  def next(:right, robot = %Robot{facing: facing}, grid),
+    do: {%{robot | facing: right(facing)}, grid}
+
+  def next(:left, robot = %Robot{facing: facing}, grid),
+    do: {%{robot | facing: left(facing)}, grid}
 
   def next(:forward, robot = %Robot{facing: :north, y: y}, grid) when y < grid.max_y,
-    do: %{robot | y: y + 1}
+    do: {%{robot | y: y + 1}, grid}
 
   def next(:forward, robot = %Robot{facing: :east, x: x}, grid) when x < grid.max_x,
-    do: %{robot | x: x + 1}
+    do: {%{robot | x: x + 1}, grid}
 
-  def next(:forward, robot = %Robot{facing: :south, y: y}, _grid) when y > 0,
-    do: %{robot | y: y - 1}
+  def next(:forward, robot = %Robot{facing: :south, y: y}, grid) when y > 0,
+    do: {%{robot | y: y - 1}, grid}
 
-  def next(:forward, robot = %Robot{facing: :west, x: x}, _grid) when x > 0,
-    do: %{robot | x: x - 1}
+  def next(:forward, robot = %Robot{facing: :west, x: x}, grid) when x > 0,
+    do: {%{robot | x: x - 1}, grid}
 
-  def next(:forward, robot = %Robot{}, _grid), do: %{robot | lost: true}
+  def next(:forward, robot = %Robot{x: x, y: y}, grid) do
+    if Grid.is_marked(grid, x, y) do
+      # Ignore the instruction to go forward.
+      {robot, grid}
+    else
+      {%{robot | lost: true}, Grid.mark(grid, x, y)}
+    end
+  end
 
   defp left(:north), do: :west
   defp left(:east), do: :north
@@ -218,18 +239,31 @@ end
 
 ```elixir
 ExUnit.configure(exclude: [:skip])
+ExUnit.start(autorun: false)
 ```
 
 ```elixir
-ExUnit.start(autorun: false)
+defmodule SimpleGridTest do
+  use ExUnit.Case
 
-defmodule RobotTest do
+  test "marking works correctly" do
+    grid = Grid.new(5, 3) |> Grid.mark(3, 3)
+    refute Grid.is_marked(grid, 1, 1)
+    assert Grid.is_marked(grid, 3, 3)
+  end
+end
+
+ExUnit.run()
+```
+
+```elixir
+defmodule SimpleRobotTest do
   use ExUnit.Case
 
   test "A robot which keeps turning right stays in the same place" do
     grid = Grid.new(1, 1)
     robot = Robot.new(0, 0, :north, [:right, :right, :right])
-    robot = Runner.run(robot, grid)
+    {robot, _} = Runner.run(robot, grid)
     assert robot.x == 0
     assert robot.y == 0
     assert robot.facing == :west
@@ -239,7 +273,7 @@ defmodule RobotTest do
   test "A robot which walks north off the map should have the correct last position" do
     grid = Grid.new(1, 1)
     robot = Robot.new(0, 0, :north, [:forward, :forward])
-    robot = Runner.run(robot, grid)
+    {robot, _} = Runner.run(robot, grid)
     assert robot.x == 0
     assert robot.y == 1
     assert robot.lost
@@ -248,16 +282,24 @@ defmodule RobotTest do
   test "A robot which walks east off the map should have the correct last position" do
     grid = Grid.new(1, 1)
     robot = Robot.new(0, 0, :east, [:forward, :forward])
-    robot = Runner.run(robot, grid)
+    {robot, _} = Runner.run(robot, grid)
     assert robot.x == 1
     assert robot.y == 0
     assert robot.lost
   end
+end
+
+ExUnit.run()
+```
+
+```elixir
+defmodule SampleInputTest do
+  use ExUnit.Case
 
   test "Sample Input: Robot 1" do
     grid = Grid.new(5, 3)
     robot = Robot.new(1, 1, :east, Parser.parse_instructions("RFRFRFRF"))
-    robot = Runner.run(robot, grid)
+    {robot, _} = Runner.run(robot, grid)
     assert robot.x == 1
     assert robot.y == 1
     assert robot.facing == :east
@@ -269,7 +311,7 @@ defmodule RobotTest do
       grid = Grid.new(5, 3)
       # FRRF should put the robot back where it was, but facing the other way.
       robot = Robot.new(3, 2, :north, Parser.parse_instructions("FRRF"))
-      robot = Runner.run(robot, grid)
+      {robot, _} = Runner.run(robot, grid)
       assert robot.x == 3
       assert robot.y == 2
       assert robot.facing == :south
@@ -281,7 +323,7 @@ defmodule RobotTest do
       # FRRF did put the robot back where it was, but facing the other way.
       # LLF should put the robot at the north edge of the grid.
       robot = Robot.new(3, 2, :south, Parser.parse_instructions("LLF"))
-      robot = Runner.run(robot, grid)
+      {robot, _} = Runner.run(robot, grid)
       assert robot.x == 3
       assert robot.y == 3
       assert robot.facing == :north
@@ -292,16 +334,16 @@ defmodule RobotTest do
       grid = Grid.new(5, 3)
       # ...another F should put the robot over the edge of the grid
       robot = Robot.new(3, 3, :north, Parser.parse_instructions("F"))
-      robot = Runner.run(robot, grid)
+      {robot, _} = Runner.run(robot, grid)
       assert robot.x == 3
       assert robot.y == 3
       assert robot.facing == :north
       assert robot.lost
 
       # ...and further instructions should be ignored
-      robot = Runner.next(:right, robot, grid)
-      robot = Runner.next(:right, robot, grid)
-      robot = Runner.next(:forward, robot, grid)
+      {robot, _} = Runner.next(:right, robot, grid)
+      {robot, _} = Runner.next(:right, robot, grid)
+      {robot, _} = Runner.next(:forward, robot, grid)
       assert robot.x == 3
       assert robot.y == 3
       assert robot.facing == :north
@@ -312,11 +354,72 @@ defmodule RobotTest do
   test "Sample Input: Robot 2" do
     grid = Grid.new(5, 3)
     robot = Robot.new(3, 2, :north, Parser.parse_instructions("FRRFLLFFRRFLL"))
-    robot = Runner.run(robot, grid)
+    {robot, grid} = Runner.run(robot, grid)
     assert robot.x == 3
     assert robot.y == 3
     assert robot.facing == :north
     assert robot.lost
+
+    assert Grid.is_marked(grid, 3, 3)
+  end
+
+  test "Sample Input: Robot 3" do
+    grid = Grid.new(5, 3) |> Grid.mark(3, 3)
+    robot = Robot.new(0, 3, :west, Parser.parse_instructions("LLFFF"))
+    {robot, _} = Runner.run(robot, grid)
+    assert robot.x == 3
+    assert robot.y == 3
+    assert robot.facing == :east
+    refute robot.lost
+
+    {robot, _} = Runner.next(:left, robot, grid)
+    assert robot.facing == :north
+
+    # Ignore the forward instruction.
+    {robot, _} = Runner.next(:forward, robot, grid)
+    assert robot.x == 3
+    assert robot.y == 3
+    refute robot.lost
+
+    # Turn left.
+    {robot, _} = Runner.next(:left, robot, grid)
+    assert robot.facing == :west
+
+    # It should now be safe to move.
+    {robot, _} = Runner.next(:forward, robot, grid)
+    assert robot.x == 2
+
+    {robot, _} = Runner.next(:left, robot, grid)
+    assert robot.facing == :south
+    assert robot.x == 2
+    assert robot.y == 3
+    refute robot.lost
+  end
+end
+
+ExUnit.run()
+```
+
+```elixir
+defmodule ScentTest do
+  use ExUnit.Case
+
+  test "Robots should not move off the world if they're on scent" do
+    grid = Grid.new(1, 1) |> Grid.mark(1, 1)
+    robot = Robot.new(1, 1, :north, [:forward])
+    {robot, _} = Runner.run(robot, grid)
+    assert robot.x == 1
+    assert robot.y == 1
+    refute robot.lost
+  end
+
+  test "Robots can move forward on scented squares if it wouldn't kill them" do
+    grid = Grid.new(1, 1) |> Grid.mark(1, 1)
+    robot = Robot.new(1, 1, :west, [:forward])
+    {robot, _} = Runner.run(robot, grid)
+    assert robot.x == 0
+    assert robot.y == 1
+    refute robot.lost
   end
 end
 
@@ -326,11 +429,11 @@ ExUnit.run()
 ## Run the instructions
 
 ```elixir
-for robot <- robots do
-  robot = Runner.run(robot, grid)
+Enum.reduce(robots, grid, fn robot, grid ->
+  {robot, grid} = Runner.run(robot, grid)
   IO.puts(format_robot.(robot))
-  robot
-end
+  grid
+end)
 
 :ok
 ```
