@@ -224,8 +224,33 @@ ExUnit.start(autorun: false)
 defmodule RobotTest do
   use ExUnit.Case
 
-  test "A robot which walks East off the map should have the correct last position" do
-    assert false
+  test "A robot which keeps turning right stays in the same place" do
+    grid = Grid.new(1, 1)
+    robot = Robot.new(0, 0, :north, [:right, :right, :right])
+    robot = Runner.run(robot, grid)
+    assert robot.x == 0
+    assert robot.y == 0
+    assert robot.facing == :west
+    refute robot.lost
+  end
+
+  test "A robot which walks north off the map should have the correct last position" do
+    grid = Grid.new(1, 1)
+    robot = Robot.new(0, 0, :north, [:forward, :forward])
+    robot = Runner.run(robot, grid)
+    assert robot.x == 0
+    assert robot.y == 1
+    assert robot.lost
+  end
+
+  test "A robot which walks east off the map should have the correct last position" do
+    grid = Grid.new(1, 1)
+    robot = Robot.new(0, 0, :east, [:forward, :forward])
+    robot = Runner.run(robot, grid)
+    assert robot.x == 1
+    assert robot.y == 0
+    assert robot.lost
+  end
   end
 end
 
