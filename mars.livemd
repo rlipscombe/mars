@@ -199,6 +199,22 @@ format_robot = fn robot ->
 end
 ```
 
+## Unit Tests
+
+Per https://github.com/livebook-dev/livebook/pull/153/files...
+
+```elixir
+ExUnit.start(autorun: false)
+
+defmodule RobotTest do
+  use ExUnit.Case
+
+  test "A robot which walks East off the map should have the correct last position" do
+    assert false
+  end
+end
+
+ExUnit.run()
 ```
 
 ## Run the instructions
