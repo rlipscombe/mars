@@ -1,6 +1,7 @@
 class Grid {
   final int maxX;
   final int maxY;
+  final Set<Position> marks = {};
 
   Grid(this.maxX, this.maxY);
 
@@ -20,6 +21,14 @@ class Grid {
 
   bool contains(Position position) {
     return position.x <= maxX && position.y <= maxY;
+  }
+
+  void mark(Position position) {
+    marks.add(position);
+  }
+
+  bool isMarked(Position position) {
+    return marks.contains(position);
   }
 }
 
@@ -98,7 +107,10 @@ class Robot {
           if (grid.contains(nextPosition)) {
             position = nextPosition;
           } else {
-            isLost = true;
+            if (!grid.isMarked(position)) {
+              grid.mark(position);
+              isLost = true;
+            }
             return;
           }
 
