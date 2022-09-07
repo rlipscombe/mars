@@ -251,6 +251,25 @@ defmodule RobotTest do
     assert robot.y == 0
     assert robot.lost
   end
+
+  test "Sample Input: Robot 1" do
+    grid = Grid.new(5, 3)
+    robot = Robot.new(1, 1, :east, Parser.parse_instructions("RFRFRFRF"))
+    robot = Runner.run(robot, grid)
+    assert robot.x == 1
+    assert robot.y == 1
+    assert robot.facing == :east
+    refute robot.lost
+  end
+
+  test "Sample Input: Robot 2" do
+    grid = Grid.new(5, 3)
+    robot = Robot.new(3, 2, :north, Parser.parse_instructions("FRRFLLFFRRFLL"))
+    robot = Runner.run(robot, grid)
+    assert robot.x == 3
+    assert robot.y == 3
+    assert robot.facing == :north
+    assert robot.lost
   end
 end
 
