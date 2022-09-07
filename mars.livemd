@@ -64,3 +64,56 @@ All instruction strings will be less than 100 characters in length.
 For each robot position/instruction in the input, the output should indicate the final grid
 position and orientation of the robot. If a robot falls off the edge of the grid the word “LOST”
 should be printed after the position and orientation.
+
+## Parsing the input
+
+```elixir
+input = Kino.Input.textarea("Problem Input:")
+```
+
+```elixir
+# Read the problem input, split on line breaks; discard empty lines
+# (the spec implies that they're not supposed to be there, but the PDF has them).
+input =
+  Kino.Input.read(input)
+  |> String.split("\n", trim: true)
+
+# Break at the first line.
+[range | robots] = input
+```
+
+```elixir
+# Convert the range.
+range =
+  String.split(range)
+  |> Enum.map(&String.to_integer/1)
+```
+
+```elixir
+# Parse the robots.
+robots =
+  Enum.chunk_every(robots, 2)
+  |> Enum.map(fn [init, instructions] ->
+    [x, y, facing] = String.split(init)
+    x = String.to_integer(x)
+    y = String.to_integer(y)
+
+    facing =
+      case facing do
+        "N" -> :north
+        "E" -> :east
+        "S" -> :south
+        "W" -> :west
+      end
+
+    instructions =
+      String.to_charlist(instructions)
+      |> Enum.map(fn
+        ?R -> :right
+        ?L -> :left
+        ?F -> :forward
+      end)
+
+    {{x, y, facing}, instructions}
+  end)
+```
