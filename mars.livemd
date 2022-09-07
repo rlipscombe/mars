@@ -351,6 +351,15 @@ defmodule RobotTest do
     assert robot.y == 1
     refute robot.lost
   end
+
+  test "Robots can move forward on scented squares if it wouldn't kill them" do
+    grid = Grid.new(1, 1) |> Grid.mark(1, 1)
+    robot = Robot.new(1, 1, :west, [:forward])
+    robot = Runner.run(robot, grid)
+    assert robot.x == 0
+    assert robot.y == 1
+    refute robot.lost
+  end
 end
 
 ExUnit.run()
