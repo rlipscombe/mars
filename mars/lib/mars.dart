@@ -69,7 +69,7 @@ class Robot {
   Robot(int x, int y, this.direction) : position = Position(x, y);
 
   get summary =>
-      "${position.x} ${position.y} ${_formatDirection(direction)} ${_formatLost(isLost)}";
+      "${position.x} ${position.y} ${_formatDirection(direction)}${_formatLost(isLost)}";
 
   @override
   String toString() {
@@ -161,7 +161,7 @@ String _formatDirection(Direction d) {
 }
 
 String _formatLost(bool isLost) {
-  return isLost ? "LOST" : "";
+  return isLost ? " LOST" : "";
 }
 
 enum Instruction {
