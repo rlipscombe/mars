@@ -242,12 +242,11 @@ end
 
 ```elixir
 ExUnit.configure(exclude: [:skip])
+ExUnit.start(autorun: false)
 ```
 
 ```elixir
-ExUnit.start(autorun: false)
-
-defmodule RobotTest do
+defmodule SimpleRobotTest do
   use ExUnit.Case
 
   test "A robot which keeps turning right stays in the same place" do
@@ -277,6 +276,14 @@ defmodule RobotTest do
     assert robot.y == 0
     assert robot.lost
   end
+end
+
+ExUnit.run()
+```
+
+```elixir
+defmodule SampleInputTest do
+  use ExUnit.Case
 
   test "Sample Input: Robot 1" do
     grid = Grid.new(5, 3)
@@ -341,7 +348,51 @@ defmodule RobotTest do
     assert robot.y == 3
     assert robot.facing == :north
     assert robot.lost
+
+    # TODO, but needs tuple return from Runner.run:
+    # assert Grid.is_marked(grid, 3, 3)
   end
+
+  test "Sample Input: Robot 3" do
+    grid = Grid.new(5, 3) |> Grid.mark(3, 3)
+    robot = Robot.new(0, 3, :west, Parser.parse_instructions("LLFFF"))
+    robot = Runner.run(robot, grid)
+    assert robot.x == 3
+    assert robot.y == 3
+    assert robot.facing == :east
+    refute robot.lost
+
+    {robot, _} = Runner.next(:left, robot, grid)
+    assert robot.facing == :north
+
+    # Ignore the forward instruction.
+    {robot, _} = Runner.next(:forward, robot, grid)
+    assert robot.x == 3
+    assert robot.y == 3
+    refute robot.lost
+
+    # Turn left.
+    {robot, _} = Runner.next(:left, robot, grid)
+    assert robot.facing == :west
+
+    # It should now be safe to move.
+    {robot, _} = Runner.next(:forward, robot, grid)
+    assert robot.x == 2
+
+    {robot, _} = Runner.next(:left, robot, grid)
+    assert robot.facing == :south
+    assert robot.x == 2
+    assert robot.y == 3
+    refute robot.lost
+  end
+end
+
+ExUnit.run()
+```
+
+```elixir
+defmodule ScentTest do
+  use ExUnit.Case
 
   test "Robots should not move off the world if they're on scent" do
     grid = Grid.new(1, 1) |> Grid.mark(1, 1)
