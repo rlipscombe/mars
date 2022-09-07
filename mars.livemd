@@ -82,18 +82,47 @@ input =
 [range | robots] = input
 ```
 
+## Define the grid
+
+We'll use a module, `Grid`, to give us some more type-safety.
+
 ```elixir
-# Convert the range.
-range =
-  String.split(range)
-  |> Enum.map(&String.to_integer/1)
+defmodule Grid do
+  defstruct [:max_x, :max_y]
+  def new([max_x, max_y]), do: new(max_x, max_y)
+  def new(max_x, max_y), do: %__MODULE__{max_x: max_x, max_y: max_y}
+end
 ```
 
 ```elixir
-# Parse the robots.
-robots =
-  Enum.chunk_every(robots, 2)
-  |> Enum.map(fn [init, instructions] ->
+# Convert the range.
+grid =
+  String.split(range)
+  |> Enum.map(&String.to_integer/1)
+  |> Grid.new()
+```
+
+## Define the Robot module
+
+A `Robot` consists of coordinates, a direction, and a list of instructions:
+
+```elixir
+defmodule Robot do
+  defstruct [:x, :y, :facing, :lost, :instructions]
+
+  def new(x, y, facing, instructions)
+      when is_integer(x) and
+             is_integer(y) and
+             is_atom(facing) and
+             is_list(instructions) do
+    %__MODULE__{x: x, y: y, facing: facing, lost: false, instructions: instructions}
+  end
+end
+```
+
+```elixir
+defmodule Parser do
+  def parse_robot([init, instructions]) do
     [x, y, facing] = String.split(init)
     x = String.to_integer(x)
     y = String.to_integer(y)
@@ -106,38 +135,202 @@ robots =
         "W" -> :west
       end
 
-    instructions =
-      String.to_charlist(instructions)
-      |> Enum.map(fn
-        ?R -> :right
-        ?L -> :left
-        ?F -> :forward
-      end)
+    instructions = Parser.parse_instructions(instructions)
+    Robot.new(x, y, facing, instructions)
+  end
 
-    {{x, y, facing}, instructions}
-  end)
+  def parse_instructions(instructions) do
+    String.to_charlist(instructions)
+    |> Enum.map(fn
+      ?R -> :right
+      ?L -> :left
+      ?F -> :forward
+    end)
+  end
+end
 ```
 
 ```elixir
-for robot = {_, instructions} <- robots do
-  robot =
-    Enum.reduce(instructions, robot, fn instruction, {{x, y, facing}, _} ->
-      case {instruction, facing} do
-        {:left, :north} -> {{x, y, :west}, instructions}
-        {:left, :east} -> {{x, y, :north}, instructions}
-        {:left, :south} -> {{x, y, :east}, instructions}
-        {:left, :west} -> {{x, y, :south}, instructions}
-        {:right, :north} -> {{x, y, :east}, instructions}
-        {:right, :east} -> {{x, y, :south}, instructions}
-        {:right, :south} -> {{x, y, :west}, instructions}
-        {:right, :west} -> {{x, y, :north}, instructions}
-        {:forward, :north} -> {{x, y + 1, facing}, instructions}
-        {:forward, :east} -> {{x + 1, y, facing}, instructions}
-        {:forward, :south} -> {{x, y - 1, facing}, instructions}
-        {:forward, :west} -> {{x - 1, y, facing}, instructions}
-      end
-    end)
+# Parse the robots.
+robots =
+  Enum.chunk_every(robots, 2)
+  |> Enum.map(&Parser.parse_robot/1)
+```
 
-  IO.puts("#{inspect(robot)}")
+## Introduce a Runner
+
+```elixir
+defmodule Runner do
+  def run(robot = %Robot{instructions: instructions}, grid) do
+    Enum.reduce(instructions, robot, fn instruction, robot -> next(instruction, robot, grid) end)
+  end
+
+  def next(_, robot = %Robot{lost: true}, _grid), do: robot
+
+  def next(:right, robot = %Robot{facing: facing}, _grid), do: %{robot | facing: right(facing)}
+  def next(:left, robot = %Robot{facing: facing}, _grid), do: %{robot | facing: left(facing)}
+
+  def next(:forward, robot = %Robot{facing: :north, y: y}, grid) when y < grid.max_y,
+    do: %{robot | y: y + 1}
+
+  def next(:forward, robot = %Robot{facing: :east, x: x}, grid) when x < grid.max_x,
+    do: %{robot | x: x + 1}
+
+  def next(:forward, robot = %Robot{facing: :south, y: y}, _grid) when y > 0,
+    do: %{robot | y: y - 1}
+
+  def next(:forward, robot = %Robot{facing: :west, x: x}, _grid) when x > 0,
+    do: %{robot | x: x - 1}
+
+  def next(:forward, robot = %Robot{}, _grid), do: %{robot | lost: true}
+
+  defp left(:north), do: :west
+  defp left(:east), do: :north
+  defp left(:south), do: :east
+  defp left(:west), do: :south
+
+  defp right(:north), do: :east
+  defp right(:east), do: :south
+  defp right(:south), do: :west
+  defp right(:west), do: :north
 end
+```
+
+```elixir
+format_direction = fn
+  :north -> "N"
+  :east -> "E"
+  :south -> "S"
+  :west -> "W"
+end
+
+format_lost = fn
+  true -> "LOST"
+  _ -> ""
+end
+
+format_robot = fn robot ->
+  "#{robot.x} #{robot.y} #{format_direction.(robot.facing)} #{format_lost.(robot.lost)}"
+end
+```
+
+## Unit Tests
+
+```elixir
+ExUnit.configure(exclude: [:skip])
+```
+
+```elixir
+ExUnit.start(autorun: false)
+
+defmodule RobotTest do
+  use ExUnit.Case
+
+  test "A robot which keeps turning right stays in the same place" do
+    grid = Grid.new(1, 1)
+    robot = Robot.new(0, 0, :north, [:right, :right, :right])
+    robot = Runner.run(robot, grid)
+    assert robot.x == 0
+    assert robot.y == 0
+    assert robot.facing == :west
+    refute robot.lost
+  end
+
+  test "A robot which walks north off the map should have the correct last position" do
+    grid = Grid.new(1, 1)
+    robot = Robot.new(0, 0, :north, [:forward, :forward])
+    robot = Runner.run(robot, grid)
+    assert robot.x == 0
+    assert robot.y == 1
+    assert robot.lost
+  end
+
+  test "A robot which walks east off the map should have the correct last position" do
+    grid = Grid.new(1, 1)
+    robot = Robot.new(0, 0, :east, [:forward, :forward])
+    robot = Runner.run(robot, grid)
+    assert robot.x == 1
+    assert robot.y == 0
+    assert robot.lost
+  end
+
+  test "Sample Input: Robot 1" do
+    grid = Grid.new(5, 3)
+    robot = Robot.new(1, 1, :east, Parser.parse_instructions("RFRFRFRF"))
+    robot = Runner.run(robot, grid)
+    assert robot.x == 1
+    assert robot.y == 1
+    assert robot.facing == :east
+    refute robot.lost
+  end
+
+  describe "For whatever reason, my robot is in the wrong place, so let's drill down a bit" do
+    test "Sample Input: Robot 2, part 1" do
+      grid = Grid.new(5, 3)
+      # FRRF should put the robot back where it was, but facing the other way.
+      robot = Robot.new(3, 2, :north, Parser.parse_instructions("FRRF"))
+      robot = Runner.run(robot, grid)
+      assert robot.x == 3
+      assert robot.y == 2
+      assert robot.facing == :south
+      refute robot.lost
+    end
+
+    test "Sample Input: Robot 2, part 2" do
+      grid = Grid.new(5, 3)
+      # FRRF did put the robot back where it was, but facing the other way.
+      # LLF should put the robot at the north edge of the grid.
+      robot = Robot.new(3, 2, :south, Parser.parse_instructions("LLF"))
+      robot = Runner.run(robot, grid)
+      assert robot.x == 3
+      assert robot.y == 3
+      assert robot.facing == :north
+      refute robot.lost
+    end
+
+    test "Sample Input: Robot 2, part 3" do
+      grid = Grid.new(5, 3)
+      # ...another F should put the robot over the edge of the grid
+      robot = Robot.new(3, 3, :north, Parser.parse_instructions("F"))
+      robot = Runner.run(robot, grid)
+      assert robot.x == 3
+      assert robot.y == 3
+      assert robot.facing == :north
+      assert robot.lost
+
+      # ...and further instructions should be ignored
+      robot = Runner.next(:right, robot, grid)
+      robot = Runner.next(:right, robot, grid)
+      robot = Runner.next(:forward, robot, grid)
+      assert robot.x == 3
+      assert robot.y == 3
+      assert robot.facing == :north
+      assert robot.lost
+    end
+  end
+
+  test "Sample Input: Robot 2" do
+    grid = Grid.new(5, 3)
+    robot = Robot.new(3, 2, :north, Parser.parse_instructions("FRRFLLFFRRFLL"))
+    robot = Runner.run(robot, grid)
+    assert robot.x == 3
+    assert robot.y == 3
+    assert robot.facing == :north
+    assert robot.lost
+  end
+end
+
+ExUnit.run()
+```
+
+## Run the instructions
+
+```elixir
+for robot <- robots do
+  robot = Runner.run(robot, grid)
+  IO.puts(format_robot.(robot))
+  robot
+end
+
+:ok
 ```
