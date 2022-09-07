@@ -328,6 +328,7 @@ defmodule RobotTest do
     robot = Runner.run(robot, grid)
     assert robot.x == 1
     assert robot.y == 1
+    refute robot.lost
   end
 end
 
