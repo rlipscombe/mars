@@ -24,7 +24,14 @@ impl std::fmt::Display for Direction {
 
 impl std::fmt::Display for Robot {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{} {} {}", self.x, self.y, self.direction)
+        write!(
+            f,
+            "{} {} {}{}",
+            self.x,
+            self.y,
+            self.direction,
+            if self.is_lost { " LOST" } else { "" }
+        )
     }
 }
 
@@ -67,17 +74,20 @@ impl Robot {
                 }
                 (Instruction::Forward, _, y, Direction::North) if y < grid.y => {
                     self.y = self.y + 1;
-                },
+                }
                 (Instruction::Forward, x, _, Direction::East) if x < grid.x => {
                     self.x = self.x + 1;
-                },
+                }
                 (Instruction::Forward, _, _, Direction::South) => {
                     self.y = self.y - 1;
-                },
+                }
                 (Instruction::Forward, _, _, Direction::West) => {
                     self.x = self.x - 1;
-                },
-                _ => { self.is_lost = true }
+                }
+                _ => {
+                    self.is_lost = true;
+                    return;
+                }
             }
         }
     }
