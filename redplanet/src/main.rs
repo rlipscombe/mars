@@ -2,10 +2,13 @@ use chumsky::prelude::*;
 use std::fs;
 
 mod model;
+use crate::model::*;
 
-fn parser() -> impl Parser<char, i32, Error = Simple<char>> {
-    let num = text::int(10).map(|s: String| s.parse().unwrap());
-    num
+fn parser() -> impl Parser<char, Grid, Error = Simple<char>> {
+    let num = text::int(10).map(|s: String| s.parse().unwrap()).padded();
+
+    let grid = num.then(num).map(|(x, y)| Grid { x, y });
+    grid
 }
 
 fn main() {
