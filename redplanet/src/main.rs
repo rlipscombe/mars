@@ -56,16 +56,27 @@ fn turn_right(d: Direction) -> Direction {
 }
 
 impl Robot {
-    fn run(&mut self, grid: &mut Grid) {
+    fn run(&mut self, _grid: &mut Grid) {
         for instruction in &self.instructions {
-            match instruction {
-                Instruction::Left => {
+            match (instruction, self.direction) {
+                (Instruction::Left, _) => {
                     self.direction = turn_left(self.direction);
                 }
-                Instruction::Right => {
+                (Instruction::Right, _) => {
                     self.direction = turn_right(self.direction);
                 }
-                _ => {}
+                (Instruction::Forward, Direction::North) => {
+                    self.y = self.y + 1;
+                },
+                (Instruction::Forward, Direction::East) => {
+                    self.x = self.x + 1;
+                },
+                (Instruction::Forward, Direction::South) => {
+                    self.y = self.y - 1;
+                },
+                (Instruction::Forward, Direction::West) => {
+                    self.x = self.x - 1;
+                },
             }
         }
     }
