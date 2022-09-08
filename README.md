@@ -1,6 +1,6 @@
 # Problem: Martian Robots
 
-This repository contains two solutions to the problem.
+This repository contains three solutions to the problem.
 
 ## Elixir Livebook
 
@@ -18,3 +18,13 @@ To open the livebook:
 ## Dart
 
 The second uses Dart; see <https://dart.dev/>. Look in the `mars` directory.
+
+## GNU awk
+
+> Because if it can't be done with bash and awk [...], it's not worth doing.
+
+-- <https://twitter.com/rogerlipscombe/status/1070727244136497153>
+
+```
+gawk -f mars.awk < input.txt
+```
