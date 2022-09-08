@@ -24,6 +24,7 @@ pub struct Robot {
     pub x: i32,
     pub y: i32,
     pub direction: Direction,
+    pub is_lost: bool,
     pub instructions: Vec<Instruction>,
 }
 

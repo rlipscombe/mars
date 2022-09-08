@@ -56,27 +56,28 @@ fn turn_right(d: Direction) -> Direction {
 }
 
 impl Robot {
-    fn run(&mut self, _grid: &mut Grid) {
+    fn run(&mut self, grid: &mut Grid) {
         for instruction in &self.instructions {
-            match (instruction, self.direction) {
-                (Instruction::Left, _) => {
+            match (instruction, self.x, self.y, self.direction) {
+                (Instruction::Left, _, _, _) => {
                     self.direction = turn_left(self.direction);
                 }
-                (Instruction::Right, _) => {
+                (Instruction::Right, _, _, _) => {
                     self.direction = turn_right(self.direction);
                 }
-                (Instruction::Forward, Direction::North) => {
+                (Instruction::Forward, _, y, Direction::North) if y < grid.y => {
                     self.y = self.y + 1;
                 },
-                (Instruction::Forward, Direction::East) => {
+                (Instruction::Forward, x, _, Direction::East) if x < grid.x => {
                     self.x = self.x + 1;
                 },
-                (Instruction::Forward, Direction::South) => {
+                (Instruction::Forward, _, _, Direction::South) => {
                     self.y = self.y - 1;
                 },
-                (Instruction::Forward, Direction::West) => {
+                (Instruction::Forward, _, _, Direction::West) => {
                     self.x = self.x - 1;
                 },
+                _ => { self.is_lost = true }
             }
         }
     }
