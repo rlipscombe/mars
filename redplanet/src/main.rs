@@ -9,12 +9,16 @@ use parser::*;
 
 impl std::fmt::Display for Direction {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Direction::North => "N",
-            Direction::East => "E",
-            Direction::South => "S",
-            Direction::West => "W",
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Direction::North => "N",
+                Direction::East => "E",
+                Direction::South => "S",
+                Direction::West => "W",
+            }
+        )
     }
 }
 
