@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 #[derive(Debug, Clone, Copy)]
 pub enum Direction {
     North,
@@ -17,6 +19,17 @@ pub enum Instruction {
 pub struct Grid {
     pub x: i32,
     pub y: i32,
+    pub scents: HashSet<(i32, i32)>,
+}
+
+impl Grid {
+    pub fn mark(&mut self, x: i32, y: i32) {
+        self.scents.insert((x, y));
+    }
+
+    pub fn is_marked(&self, x: i32, y: i32) -> bool {
+        self.scents.contains(&(x, y))
+    }
 }
 
 #[derive(Debug)]

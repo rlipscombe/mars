@@ -85,8 +85,11 @@ impl Robot {
                     self.x = self.x - 1;
                 }
                 _ => {
-                    self.is_lost = true;
-                    return;
+                    if !grid.is_marked(self.x, self.y) {
+                        self.is_lost = true;
+                        grid.mark(self.x, self.y);
+                        return;
+                    }
                 }
             }
         }

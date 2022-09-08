@@ -1,10 +1,11 @@
+use std::collections::HashSet;
 use crate::model::*;
 use chumsky::prelude::*;
 
 pub fn parser() -> impl Parser<char, Problem, Error = Simple<char>> {
     let num = text::int(10).map(|s: String| s.parse().unwrap()).padded();
 
-    let grid = num.then(num).map(|(x, y)| Grid { x, y });
+    let grid = num.then(num).map(|(x, y)| Grid { x, y, scents: HashSet::new() });
     let direction = choice((
         just("N").to(Direction::North),
         just("E").to(Direction::East),
