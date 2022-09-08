@@ -1,6 +1,6 @@
 # Problem: Martian Robots
 
-This repository contains three solutions to the problem.
+This repository contains four solutions to the problem.
 
 ## Elixir Livebook
 
@@ -27,4 +27,12 @@ The second uses Dart; see <https://dart.dev/>. Look in the `mars` directory.
 
 ```
 gawk -f mars.awk < input.txt
+```
+
+## Rust
+
+In the `redplanet` directory.
+
+```
+cargo run
 ```
