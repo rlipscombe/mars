@@ -61,7 +61,13 @@ function move_forward(r) {
         r[1]--
     }
     else {
-        r[4] = 1
+        if ((r[1], r[2]) in scents) {
+            # ignore it
+        }
+        else {
+            r[4] = 1
+            scents[r[1], r[2]] = 1
+        }
     }
 }
 
