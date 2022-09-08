@@ -14,7 +14,8 @@ parser_state == GRID && match($0, /([0-9]+) ([0-9]+)/, grid) {
 
 # Looking for a robot initialisation; place the two coordinates in robot[1] and robot[2]; direction in robot[3]
 parser_state == ROBOT_INIT && match($0, /([0-9]+) ([0-9]+) ([NESW])/, robot) {
-    # print "robot-init: " robot[1] robot[2] robot[3]
+    robot[4] = 0
+    # print "robot-init: " robot[1] robot[2] robot[3] robot[4]
     parser_state = ROBOT_INSTR
     robot_id++;
     next
@@ -47,21 +48,20 @@ function turn_right(d) {
 }
 
 function move_forward(r) {
-    switch(r[3]) {
-    case "N":
+    if (r[3] == "N" && r[2] < grid[2]) {
         r[2]++
-        break
-    case "E":
+    }
+    else if (r[3] == "E" && r[1] < grid[1]) {
         r[1]++
-        break
-    case "S":
+    }
+    else if (r[3] == "S" && r[2] > 0) {
         r[2]--
-        break
-    case "W":
+    }
+    else if (r[3] == "W" && r[1] > 0) {
         r[1]--
-        break
-    default:
-        error()
+    }
+    else {
+        r[4] = 1
     }
 }
 
@@ -69,7 +69,9 @@ parser_state == ROBOT_INSTR {
     # run the robot
     len = split($0, instructions, "")
     for (i = 1; i <= len; i++) {
-        # printf("robot %d (%d %d %s) %s\n", robot_id, robot[1], robot[2], robot[3], instructions[i])
+        #printf("robot %d (%d %d %s %d) %s\n", robot_id, robot[1], robot[2], robot[3], robot[4], instructions[i])
+        if (robot[4])
+            break
 
         switch(instructions[i]) {
         case "L":
@@ -87,7 +89,7 @@ parser_state == ROBOT_INSTR {
     }
 
     # where did the robot end up?
-    printf("%d %d %s\n", robot[1], robot[2], robot[3])
+    printf("%d %d %s%s\n", robot[1], robot[2], robot[3], (robot[4] ? " LOST" : ""))
 
     # go back to looking for the next robot
     parser_state = ROBOT_INIT
